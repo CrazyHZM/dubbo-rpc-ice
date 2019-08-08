@@ -18,15 +18,21 @@
 package org.apache.dubbo.rpc.protocol.ice;
 
 import com.zeroc.Ice.Object;
-import com.zeroc.Ice.*;
+import com.zeroc.Ice.ObjectAdapter;
+import com.zeroc.Ice.InitializationData;
+import com.zeroc.Ice.Communicator;
+import com.zeroc.Ice.Util;
+import com.zeroc.Ice.ObjectPrx;
+import com.zeroc.Ice.Properties;
+
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.protocol.AbstractProxyProtocol;
 
 import java.lang.Exception;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,37 +96,19 @@ public class IceProtocol extends AbstractProxyProtocol {
 
     @Override
     protected <T> T doRefer(Class<T> type, URL url) throws RpcException {
-        String typeName = type.getName();
-        typeName = "org.apache.dubbo.rpc.protocol.ice.demo._DemoServicePrxI";
-        T iceClient = null;
+        T iceClient;
         try {
             Communicator communicator = Util.initialize(getInitializationData());
             ObjectPrx base = communicator.stringToProxy(String.format("%s:%s", getIdentity(url), getIceEndpoint(url)));
-            Class cls = Class.forName(typeName);
-            Constructor con = cls.getConstructor();
-            ObjectPrx object = (ObjectPrx) con.newInstance();
 
-            Method method = type.getDeclaredMethod("checkedCast", ObjectPrx.class);
-
-            Constructor<MethodHandles.Lookup> constructor = MethodHandles.Lookup.class
-                    .getDeclaredConstructor(Class.class, int.class);
-            constructor.setAccessible(true);
-            Class<?> declaringClass = method.getDeclaringClass();
-            int allModes = MethodHandles.Lookup.PUBLIC | MethodHandles.Lookup.PRIVATE | MethodHandles.Lookup.PROTECTED | MethodHandles.Lookup.PACKAGE;
-
-            try {
-                iceClient = (T) constructor.newInstance(declaringClass, allModes)
-                        .unreflectSpecial(method, declaringClass)
-                        .bindTo(object)
-                        .invokeWithArguments(base);
-            } catch (Throwable e) {
-                logger.error(e.getMessage(), e);
-            }
+            MethodType methodType = MethodType.methodType(type, ObjectPrx.class);
+            MethodHandle aStatic = MethodHandles.lookup().findStatic(type, "checkedCast", methodType);
+            iceClient = (T) aStatic.invoke(base);
 
             return iceClient;
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            throw new RpcException("Fail to create remote client for service(" + url + "): " + e.getMessage(), e);
+        } catch (Throwable throwable) {
+            logger.error(throwable.getMessage(), throwable);
+            throw new RpcException("Fail to create remote client for service(" + url + "): " + throwable.getMessage(), throwable);
         }
     }
 
