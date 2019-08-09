@@ -17,15 +17,14 @@
 
 package org.apache.dubbo.rpc.protocol.ice;
 
-
 import com.zeroc.Ice.Current;
 import org.apache.dubbo.rpc.RpcContext;
-import org.apache.dubbo.rpc.protocol.ice.demo.DemoService;
+import org.apache.dubbo.rpc.protocol.ice.user.UserService;
 
 /**
- *
+ * UserServiceImpl
  */
-public class DemoServiceImpl implements DemoService {
+public class UserServiceImpl implements UserService {
     @Override
     public String sayHello(String name, Current current) {
         return "Hello, " + name;
@@ -46,22 +45,7 @@ public class DemoServiceImpl implements DemoService {
     }
 
     @Override
-    public float getFloatValue(float value, Current current) {
-        return value;
-    }
-
-    @Override
-    public double getDoubleValue(double value, Current current) {
-        return value;
-    }
-
-    @Override
-    public long getLongValue(long value, Current current) {
-        return value;
-    }
-
-    @Override
-    public short getShortValue(short value, Current current) {
+    public float getMoney(float value, Current current) {
         return value;
     }
 

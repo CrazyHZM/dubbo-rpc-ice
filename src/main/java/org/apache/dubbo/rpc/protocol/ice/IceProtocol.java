@@ -65,13 +65,16 @@ public class IceProtocol extends AbstractProxyProtocol {
             try {
                 communicator = Util.initialize(initializationData);
                 adapter = communicator.createObjectAdapterWithEndpoints(getIdentity(url), getIceEndpoint(url));
-                adapter.add((Object) impl, Util.stringToIdentity(getIdentity(url)));
+                adapter.add((Object) impl, Util.stringToIdentity(url.getServiceInterface()));
 
             } catch (Exception e) {
                 logger.error("Fail to create ice server(" + url + ") due to create ObjectAdapter fail");
                 throw new RpcException("Fail to create ice server(" + url + ") due to create ObjectAdapter fail");
             }
         } else {
+            if (objectAdapter.find(Util.stringToIdentity(url.getServiceInterface())) == null) {
+                objectAdapter.add((Object) impl, Util.stringToIdentity(url.getServiceInterface()));
+            }
             return null;
         }
         adapterMap.put(url.getAddress(), adapter);
@@ -99,7 +102,7 @@ public class IceProtocol extends AbstractProxyProtocol {
         T iceClient;
         try {
             Communicator communicator = Util.initialize(getInitializationData());
-            ObjectPrx base = communicator.stringToProxy(String.format("%s:%s", getIdentity(url), getIceEndpoint(url)));
+            ObjectPrx base = communicator.stringToProxy(String.format("%s:%s", url.getServiceInterface(), getIceEndpoint(url)));
 
             MethodType methodType = MethodType.methodType(type, ObjectPrx.class);
             MethodHandle aStatic = MethodHandles.lookup().findStatic(type, "checkedCast", methodType);
@@ -142,7 +145,4 @@ public class IceProtocol extends AbstractProxyProtocol {
 
     }
 
-//    private String getPrxI(String typeName){
-//
-//    }
 }
